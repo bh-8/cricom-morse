@@ -70,33 +70,30 @@ class Encoder():
         self.carrier: int = carrier
         self.samplerate: int = samplerate
         self.baselength: int = baselength
+
     @staticmethod
     def construct(msg: str) -> list[bool]:
-        morse_symbols: list[bool] = []
-        for sym in msg:
-            if sym == " ":
-                morse_symbols.extend(MORSE_WORD_STOP)
-                continue
-            for s in MORSE_CODE[sym]:
-                if s:
-                    morse_symbols.extend(MORSE_SHORT)
-                else:
-                    morse_symbols.extend(MORSE_LONG)
-            morse_symbols.extend(MORSE_SYMBOL_STOP)
-        return morse_symbols
-
+        return [
+            bit for sym in msg for bit in (
+                MORSE_WORD_STOP if sym == " " else [
+                    morse_bit for s in MORSE_CODE[sym] for morse_bit in (MORSE_SHORT if s else MORSE_LONG)
+                ] + MORSE_SYMBOL_STOP
+            )
+        ]
     def encode(self) -> int:
-        # TODO: message, baselenth missing
+        morse_sequence: list[bool] = Encoder.construct(self.message)
+        morse_seconds: int = 1 + int(float(len(morse_sequence)) * (float(self.baselength) / 1000.))
 
-        print(f"length of message '{self.message}' is {len(Encoder.construct(self.message))}")
-        print(f"construction is {Encoder.construct(self.message)}")
-
-
-        secs = 3
-
-        t = np.linspace(0., secs, self.samplerate * secs)
+        t = np.linspace(0., morse_seconds, self.samplerate * morse_seconds)
         amplitude = np.iinfo(np.int16).max
         data = amplitude * np.sin(2. * np.pi * self.carrier * t)
 
-        #wavfile.write(self.wav_file, self.samplerate, data.astype(np.int16))
+
+        print(f"length of message '{self.message}' is {len(morse_sequence)}")
+        print(f"length of t ' is {len(t)}")
+        print(f"construction is {morse_sequence}")
+        print(f"morse sequence will be {morse_seconds} seconds long")
+
+
+        wavfile.write(self.wav_file, self.samplerate, data.astype(np.int16))
         return 0
