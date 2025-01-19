@@ -69,8 +69,7 @@ class Encoder():
         self.message: str = message
         self.carrier: int = carrier
         self.samplerate: int = samplerate
-        self.baselength: int = baselength
-
+        self.baselength: float = float(baselength) / 1000. # convert ms to s
     @staticmethod
     def construct(msg: str) -> list[bool]:
         return [
@@ -80,20 +79,16 @@ class Encoder():
                 ] + MORSE_SYMBOL_STOP
             )
         ]
+    def convert(self, morse_code: list[bool]):
+        audio_signal = []
+        for m in morse_code:
+            d: int = int(float(self.samplerate) * self.baselength) # Anzahl samples pro Wahrheitswert
+            if m:
+                t = np.linspace(0., self.baselength, d, endpoint=False)
+                audio_signal.extend(np.sin(2 * np.pi * self.carrier * t))
+            else:
+                audio_signal.extend(np.zeros(d))
+        return np.array(audio_signal, dtype=np.float32)
     def encode(self) -> int:
-        morse_sequence: list[bool] = Encoder.construct(self.message)
-        morse_seconds: int = 1 + int(float(len(morse_sequence)) * (float(self.baselength) / 1000.))
-
-        t = np.linspace(0., morse_seconds, self.samplerate * morse_seconds)
-        amplitude = np.iinfo(np.int16).max
-        data = amplitude * np.sin(2. * np.pi * self.carrier * t)
-
-
-        print(f"length of message '{self.message}' is {len(morse_sequence)}")
-        print(f"length of t ' is {len(t)}")
-        print(f"construction is {morse_sequence}")
-        print(f"morse sequence will be {morse_seconds} seconds long")
-
-
-        wavfile.write(self.wav_file, self.samplerate, data.astype(np.int16))
+        wavfile.write(self.wav_file, self.samplerate, self.convert(Encoder.construct(self.message)))
         return 0
