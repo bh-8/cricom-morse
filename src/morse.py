@@ -135,6 +135,8 @@ class Decoder():
                     continue
                 if morse_code[i] == False:
                     i = i + 1
+                    message = message + Decoder.morse_invert(current_morse_symbol)
+                    current_morse_symbol = []
                     continue
                 raise ValueError("failed to deconstruct morse code (2)")
         return message
