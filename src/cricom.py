@@ -30,20 +30,35 @@ try:
         morse_message = morse_message.lower()
         if wav_file.exists() and not switch_force:
             raise FileExistsError(f"file '{wav_file}' does already exist, use '--force' or '-f' to confirm overwriting")
-        
+
         print(f"encoding file '{wav_file}' using the following parameters:")
-        print(f"\tmessage: '{morse_message}'")
         print(f"\tcarrier frequency: {morse_carrier} Hz")
         print(f"\tsample rate: {morse_samplerate} Hz")
         print(f"\tbase length: {morse_baselength} ms")
+        print(f"\tmessage: '{morse_message}'")
 
-        morse_encoder: morse.Encoder = morse.Encoder(wav_file, morse_message, morse_carrier, morse_samplerate, morse_baselength)
+        morse_encoder: morse.Encoder = morse.Encoder(wav_file, morse_baselength, morse_carrier, morse_samplerate, morse_message)
+
         if morse_encoder.encode() == 0:
             print("done")
         else:
             raise AssertionError("encoding failed")
     elif action_decode:
-        pass
+        if not wav_file.exists():
+            raise FileNotFoundError(f"could not access file '{wav_file}'")
+
+        print(f"decoding file '{wav_file}' using the following parameters:")
+        print(f"\tcarrier frequency: {morse_carrier} Hz")
+        print(f"\tbase length: {morse_baselength} ms")
+
+        morse_decoder: morse.Decoder = morse.Decoder(wav_file, morse_baselength, morse_carrier)
+
+        if morse_decoder.decode() == 0:
+            print("done")
+            print(f"communicated message is '{morse_decoder.read_message()}'!")
+        else:
+            raise AssertionError("decoding failed")
+
 except Exception as ex:
     print(f"[!] Error: {ex} [!]")
     print(traceback.format_exc())
