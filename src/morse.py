@@ -152,7 +152,7 @@ class Decoder():
         t: np.ndarray = np.linspace(0., self.baselength, d, endpoint=False)
         beep_signal: np.ndarray = np.roll(np.sin(2 * np.pi * self.carrier * t), -1)
 
-        signal /= np.max(np.abs(signal), axis=0)
+        signal = signal / np.max(np.abs(signal), axis=0)
 
         i: int = Decoder.find_next_beep(signal, 0)
         if i == -1:
@@ -162,7 +162,9 @@ class Decoder():
         while len(signal) - i >= d:
             dit: np.ndarray = signal[i:i + d]
             beep_phase: int = Decoder.find_next_beep(dit, 0)
-            morse_code.append(False if beep_phase == -1 or beep_phase > (d / 2) else bool((sum([abs(x) for x in np.subtract(beep_signal, np.roll(dit, -beep_phase))]) / d) < 0.6))
+            decision: float = sum([abs(x) for x in np.subtract(beep_signal, np.roll(dit, -beep_phase))]) / d
+
+            morse_code.append(False if beep_phase == -1 or beep_phase > (d / 2) else bool(decision < 0.6))
             i = i + d
 
         return morse_code
